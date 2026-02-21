@@ -4,6 +4,13 @@
 # UniFi persistent runtime data
 unifi/data/
 
+# Home Assistant persistent runtime data
+homeassistant/config/
+
+# MQTT persistent runtime data
+mqtt/data/
+mqtt/log/
+
 # Common Traefik runtime artifacts (if added later)
 traefik/acme.json
 traefik/data/

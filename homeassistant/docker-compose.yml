@@ -1,0 +1,26 @@
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    networks: [veve]
+    environment:
+      - TZ=Europe/Prague
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ha-http.rule=Host(`ha.home.arpa`)"
+      - "traefik.http.routers.ha-http.entrypoints=web"
+      - "traefik.http.routers.ha-http.middlewares=ha-https-redirect"
+      - "traefik.http.middlewares.ha-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.ha.rule=Host(`ha.home.arpa`)"
+      - "traefik.http.routers.ha.entrypoints=websecure"
+      - "traefik.http.routers.ha.tls=true"
+      - "traefik.http.routers.ha.service=homeassistant"
+      - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
+
+networks:
+  veve:
+    external: true

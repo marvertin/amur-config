@@ -4,8 +4,10 @@ Tento repozitář obsahuje jednoduché self-hosted prostředí postavené na Doc
 
 - `traefik/` – reverse proxy (Traefik)
 - `unifi/` – UniFi Network Controller
+- `homeassistant/` – Home Assistant
+- `mqtt/` – MQTT broker (Eclipse Mosquitto)
 
-Obě služby používají externí Docker síť `veve`.
+Všechny služby používají externí Docker síť `veve`.
 
 ## Struktura
 
@@ -27,8 +29,23 @@ Obě služby používají externí Docker síť `veve`.
   - Runtime/perzistentní data UniFi (DB, backupy, keystore, konfigurace)
   - Tato data jsou záměrně ignorována v Gitu
 
+- `homeassistant/docker-compose.yml`
+  - Spouští `ghcr.io/home-assistant/home-assistant:stable`
+  - Připojuje se do sítě `veve`
+  - Obsahuje Traefik labels pro host `ha.home.arpa`
+  - Persistuje konfiguraci do `homeassistant/config/`
+
+- `mqtt/docker-compose.yml`
+  - Spouští `eclipse-mosquitto:2`
+  - Publikuje porty `1883` (MQTT) a `9001` (WebSocket MQTT)
+  - Persistuje data do `mqtt/data/` a logy do `mqtt/log/`
+
+- `mqtt/config/mosquitto.conf`
+  - Základní konfigurace brokeru
+  - Aktuálně `allow_anonymous true` (vhodné jen pro důvěryhodnou LAN)
+
 - `.gitignore`
-  - Ignoruje runtime data (`unifi/data/`, logy, run adresáře, dočasné soubory)
+  - Ignoruje runtime data (`unifi/data/`, `homeassistant/config/`, `mqtt/data/`, `mqtt/log/`, logy, run adresáře, dočasné soubory)
   - Verzuje pouze infrastrukturu (compose a konfigurační soubory)
 
 ## Poznámky k provozu
@@ -36,11 +53,18 @@ Obě služby používají externí Docker síť `veve`.
 - Síť `veve` musí existovat jako externí Docker network.
 - Traefik má zapnuté Docker provider routování přes labels.
 - UniFi web je vystaven přes Traefik na `https://unifi.home.arpa`.
+- Home Assistant je vystaven přes Traefik na `https://ha.home.arpa`.
+- MQTT broker je dostupný na `tcp://<IP_SERVERU>:1883` (a WS na `9001`).
+- Pro Home Assistant za reverse proxy musí být v `homeassistant/config/configuration.yaml` nastaveno `http.use_x_forwarded_for` a `http.trusted_proxies`.
 
 ## Požadavky
 
 - Docker Engine + Docker Compose plugin (`docker compose`)
-- Otevřené porty na hostu pro Traefik (`80`, `443`, `8081`) a UniFi (`8080`, `3478/udp`, `10001/udp`, `1900/udp`, `8843`, `8880`, `6789`)
+- Otevřené porty na hostu:
+  - Traefik: `80`, `443`, `8081`
+  - UniFi: `8080`, `3478/udp`, `10001/udp`, `1900/udp`, `8843`, `8880`, `6789`
+  - Home Assistant: `8123`
+  - MQTT: `1883`, `9001`
 - Externí Docker síť `veve`
 - DNS záznam (nebo lokální override), aby `unifi.home.arpa` mířilo na IP tohoto hostu
 
@@ -55,12 +79,15 @@ docker network create veve
 2. Ověř, že záznam `unifi.home.arpa` ukazuje na správnou IP serveru.
   - V domácí síti typicky v lokálním DNS resolveru/routeru.
   - Pro rychlý test můžeš dočasně použít záznam v `/etc/hosts` na klientovi.
+  - Přidej i DNS záznam `ha.home.arpa` na IP tohoto serveru.
 
 3. Spusť služby:
 
 ```bash
 cd traefik && docker compose up -d
 cd ../unifi && docker compose up -d
+cd ../mqtt && docker compose up -d
+cd ../homeassistant && docker compose up -d
 ```
 
 ## Troubleshooting
@@ -82,9 +109,13 @@ docker network ls | grep veve
 ```bash
 docker compose -f traefik/docker-compose.yaml logs -f
 docker compose -f unifi/docker-compose.yml logs -f
+docker compose -f mqtt/docker-compose.yml logs -f
+docker compose -f homeassistant/docker-compose.yml logs -f
 ```
 
 - Pokud nejde web, ověř DNS: `unifi.home.arpa` musí resolve na server s tímto Docker stackem.
+- Pokud nejde Home Assistant, ověř DNS `ha.home.arpa` a logy Traefiku/Home Assistantu.
+- Pokud nejde MQTT, ověř otevřený port `1883` a konfiguraci v `mqtt/config/mosquitto.conf`.
 
 ## Aktualizace
 
@@ -93,6 +124,8 @@ Aktualizace image a restart služeb:
 ```bash
 cd traefik && docker compose pull && docker compose up -d
 cd ../unifi && docker compose pull && docker compose up -d
+cd ../mqtt && docker compose pull && docker compose up -d
+cd ../homeassistant && docker compose pull && docker compose up -d
 ```
 
 Volitelně můžeš po aktualizaci odstranit nepoužívané image:
@@ -108,12 +141,16 @@ Pokud po aktualizaci nastane problém, vrať se na konkrétní image tag:
 1. Uprav image ve compose souboru na známou funkční verzi (místo `latest`):
   - `traefik/docker-compose.yaml` → `image: traefik:<verze>`
   - `unifi/docker-compose.yml` → `image: jacobalberty/unifi:<verze>`
+  - `mqtt/docker-compose.yml` → `image: eclipse-mosquitto:<verze>`
+  - `homeassistant/docker-compose.yml` → `image: ghcr.io/home-assistant/home-assistant:<verze>`
 
 2. Znovu nasaď službu:
 
 ```bash
 cd traefik && docker compose pull && docker compose up -d
 cd ../unifi && docker compose pull && docker compose up -d
+cd ../mqtt && docker compose pull && docker compose up -d
+cd ../homeassistant && docker compose pull && docker compose up -d
 ```
 
 3. Ověř stav kontejnerů a logy:
@@ -122,4 +159,6 @@ cd ../unifi && docker compose pull && docker compose up -d
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 docker compose -f traefik/docker-compose.yaml logs --tail=100
 docker compose -f unifi/docker-compose.yml logs --tail=100
+docker compose -f mqtt/docker-compose.yml logs --tail=100
+docker compose -f homeassistant/docker-compose.yml logs --tail=100
 ```
