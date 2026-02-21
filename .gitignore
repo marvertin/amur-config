@@ -1,0 +1,20 @@
+# Keep infrastructure-as-code (compose/config) under version control,
+# but ignore runtime/application data volumes.
+
+# UniFi persistent runtime data
+unifi/data/
+
+# Common Traefik runtime artifacts (if added later)
+traefik/acme.json
+traefik/data/
+
+# Generic container/runtime noise
+**/*.log
+**/logs/
+**/run/
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

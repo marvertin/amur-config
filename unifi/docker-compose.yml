@@ -1,0 +1,38 @@
+services:
+  unifi:
+    image: jacobalberty/unifi:latest
+    networks: [veve]
+    container_name: unifi
+    environment:
+      - TZ=Europe/Prague
+    volumes:
+      - ./data:/unifi
+    ports:
+      - 8080:8080        # inform port – AP se sem připojují (HTTP)
+     # - 8443:8443        # webové UI controlleru (HTTPS)
+      - 3478:3478/udp    # STUN – detekce NAT, důležité pro některé scénáře
+      - 10001:10001/udp  # discovery – L2 broadcast adopce zařízení
+      - 1900:1900/udp    # SSDP – discovery (často není nutné v čisté L2 síti)
+      - 8843:8843        # HTTPS guest portal
+      - 8880:8880        # HTTP guest portal
+      - 6789:6789        # speed test (UniFi zařízení)
+    restart: unless-stopped
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.unifi-http.rule=Host(`unifi.home.arpa`)"
+      - "traefik.http.routers.unifi-http.entrypoints=web"
+      - "traefik.http.routers.unifi-http.middlewares=unifi-https-redirect"
+      - "traefik.http.middlewares.unifi-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.unifi.rule=Host(`unifi.home.arpa`)"
+      - "traefik.http.routers.unifi.entrypoints=websecure"
+      - "traefik.http.routers.unifi.tls=true"
+      - "traefik.http.routers.unifi.service=unifi"
+      - "traefik.http.services.unifi.loadbalancer.server.port=8443"
+      - "traefik.http.services.unifi.loadbalancer.server.scheme=https"
+
+networks:
+  veve:
+    external: true
+
+
