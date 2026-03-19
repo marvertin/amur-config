@@ -1,6 +1,9 @@
 # Keep infrastructure-as-code (compose/config) under version control,
 # but ignore runtime/application data volumes.
 
+# MQTT hesla
+mqtt/config/passwords
+
 # UniFi persistent runtime data
 unifi/data/
 

@@ -22,7 +22,7 @@ Všechny služby používají externí Docker síť `veve`.
 - `unifi/docker-compose.yml`
   - Spouští `jacobalberty/unifi:latest`
   - Persistuje data do `unifi/data/` (mount `./data:/unifi`)
-  - Obsahuje Traefik labels pro host `unifi.home.arpa`
+  - Obsahuje Traefik labels pro host `unifi.veve`
   - Publikuje porty potřebné pro UniFi (např. `8080`, `3478/udp`, `10001/udp`, `8843`, `8880`, `6789`)
 
 - `unifi/data/`
@@ -32,7 +32,7 @@ Všechny služby používají externí Docker síť `veve`.
 - `homeassistant/docker-compose.yml`
   - Spouští `ghcr.io/home-assistant/home-assistant:stable`
   - Připojuje se do sítě `veve`
-  - Obsahuje Traefik labels pro host `ha.home.arpa`
+  - Obsahuje Traefik labels pro host `ha.veve`
   - Persistuje konfiguraci do `homeassistant/config/`
 
 - `mqtt/docker-compose.yml`
@@ -52,8 +52,8 @@ Všechny služby používají externí Docker síť `veve`.
 
 - Síť `veve` musí existovat jako externí Docker network.
 - Traefik má zapnuté Docker provider routování přes labels.
-- UniFi web je vystaven přes Traefik na `https://unifi.home.arpa`.
-- Home Assistant je vystaven přes Traefik na `https://ha.home.arpa`.
+- UniFi web je vystaven přes Traefik na `https://unifi.veve`.
+- Home Assistant je vystaven přes Traefik na `https://ha.veve`.
 - MQTT broker je dostupný na `tcp://<IP_SERVERU>:1883` (a WS na `9001`).
 - Pro Home Assistant za reverse proxy musí být v `homeassistant/config/configuration.yaml` nastaveno `http.use_x_forwarded_for` a `http.trusted_proxies`.
 
@@ -66,7 +66,7 @@ Všechny služby používají externí Docker síť `veve`.
   - Home Assistant: `8123`
   - MQTT: `1883`, `9001`
 - Externí Docker síť `veve`
-- DNS záznam (nebo lokální override), aby `unifi.home.arpa` mířilo na IP tohoto hostu
+- DNS záznam (nebo lokální override), aby `unifi.veve` mířilo na IP tohoto hostu
 
 ## První setup (síť + DNS)
 
@@ -76,10 +76,10 @@ Všechny služby používají externí Docker síť `veve`.
 docker network create veve
 ```
 
-2. Ověř, že záznam `unifi.home.arpa` ukazuje na správnou IP serveru.
+2. Ověř, že záznam `unifi.veve` ukazuje na správnou IP serveru.
   - V domácí síti typicky v lokálním DNS resolveru/routeru.
   - Pro rychlý test můžeš dočasně použít záznam v `/etc/hosts` na klientovi.
-  - Přidej i DNS záznam `ha.home.arpa` na IP tohoto serveru.
+  - Přidej i DNS záznam `ha.veve` na IP tohoto serveru.
 
 3. Spusť služby:
 
@@ -113,8 +113,8 @@ docker compose -f mqtt/docker-compose.yml logs -f
 docker compose -f homeassistant/docker-compose.yml logs -f
 ```
 
-- Pokud nejde web, ověř DNS: `unifi.home.arpa` musí resolve na server s tímto Docker stackem.
-- Pokud nejde Home Assistant, ověř DNS `ha.home.arpa` a logy Traefiku/Home Assistantu.
+- Pokud nejde web, ověř DNS: `unifi.veve` musí resolve na server s tímto Docker stackem.
+- Pokud nejde Home Assistant, ověř DNS `ha.veve` a logy Traefiku/Home Assistantu.
 - Pokud nejde MQTT, ověř otevřený port `1883` a konfiguraci v `mqtt/config/mosquitto.conf`.
 
 ## Aktualizace
