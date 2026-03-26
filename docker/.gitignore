@@ -14,10 +14,6 @@ homeassistant/config/
 mqtt/data/
 mqtt/log/
 
-# Common Traefik runtime artifacts (if added later)
-traefik/acme.json
-traefik/data/
-
 # Generic container/runtime noise
 **/*.log
 **/logs/
