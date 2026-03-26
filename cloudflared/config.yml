@@ -1,0 +1,16 @@
+tunnel: vehema
+credentials-file: /home/martin/.cloudflared/vehema-tunnel.json
+
+ingress:
+  - hostname: ha.vehema.cz
+    service: http://localhost:8123
+
+  - hostname: jelec.vehema.cz
+    service: http://jelec.veve:7000
+
+  - hostname: unifi.vehema.cz
+    service: https://localhost:8443
+    originRequest:
+      noTLSVerify: true
+
+  - service: http_status:404
