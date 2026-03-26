@@ -6,6 +6,8 @@ services:
     networks: [veve]
     environment:
       - TZ=Europe/Prague
+    ports:
+      - "8123:8123"
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
