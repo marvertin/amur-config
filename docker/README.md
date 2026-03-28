@@ -5,6 +5,7 @@ Tento repozitář obsahuje self-hosted prostředí postavené na Docker Compose:
 - `unifi/` – UniFi Network Controller
 - `homeassistant/` – Home Assistant
 - `mqtt/` – MQTT broker (Eclipse Mosquitto)
+- `minecraft/` – Java Minecraft server (Vanilla)
 
 Služby `unifi` a `mqtt` používají externí Docker síť `veve`. Home Assistant běží v host síti.
 
@@ -33,8 +34,14 @@ Služby `unifi` a `mqtt` používají externí Docker síť `veve`. Home Assista
   - Základní konfigurace brokeru
   - Aktuálně `allow_anonymous true` (vhodné jen pro důvěryhodnou LAN)
 
+- `minecraft/docker-compose.yml`
+  - Spouští `itzg/minecraft-server:java25`
+  - Publikuje port `25565/tcp`
+  - Persistuje data do `minecraft/data/`
+  - Výchozí typ serveru: `VANILLA`
+
 - `.gitignore`
-  - Ignoruje runtime data (`unifi/data/`, `homeassistant/config/`, `mqtt/data/`, `mqtt/log/`, logy, run adresáře, dočasné soubory)
+  - Ignoruje runtime data (`unifi/data/`, `homeassistant/config/`, `mqtt/data/`, `mqtt/log/`, `minecraft/data/`, logy, run adresáře, dočasné soubory)
   - Verzuje pouze infrastrukturu (compose a konfigurační soubory)
 
 ## Poznámky k provozu
@@ -67,6 +74,7 @@ docker network create veve
 cd unifi && docker compose up -d
 cd ../mqtt && docker compose up -d
 cd ../homeassistant && docker compose up -d
+cd ../minecraft && docker compose up -d
 ```
 
 ## Troubleshooting
@@ -89,6 +97,7 @@ docker network ls | grep veve
 docker compose -f unifi/docker-compose.yml logs -f
 docker compose -f mqtt/docker-compose.yml logs -f
 docker compose -f homeassistant/docker-compose.yml logs -f
+docker compose -f minecraft/docker-compose.yml logs -f
 ```
 
 - Pokud nejde Home Assistant, ověř dostupnost na `http://<IP_SERVERU>:8123` a logy kontejneru.
@@ -102,6 +111,7 @@ Aktualizace image a restart služeb:
 cd unifi && docker compose pull && docker compose up -d
 cd ../mqtt && docker compose pull && docker compose up -d
 cd ../homeassistant && docker compose pull && docker compose up -d
+cd ../minecraft && docker compose pull && docker compose up -d
 ```
 
 Volitelně můžeš po aktualizaci odstranit nepoužívané image:
@@ -118,6 +128,7 @@ Pokud po aktualizaci nastane problém, vrať se na konkrétní image tag:
   - `unifi/docker-compose.yml` → `image: jacobalberty/unifi:<verze>`
   - `mqtt/docker-compose.yml` → `image: eclipse-mosquitto:<verze>`
   - `homeassistant/docker-compose.yml` → `image: ghcr.io/home-assistant/home-assistant:<verze>`
+  - `minecraft/docker-compose.yml` → `image: itzg/minecraft-server:<tag>`
 
 2. Znovu nasaď službu:
 
@@ -125,6 +136,7 @@ Pokud po aktualizaci nastane problém, vrať se na konkrétní image tag:
 cd unifi && docker compose pull && docker compose up -d
 cd ../mqtt && docker compose pull && docker compose up -d
 cd ../homeassistant && docker compose pull && docker compose up -d
+cd ../minecraft && docker compose pull && docker compose up -d
 ```
 
 3. Ověř stav kontejnerů a logy:
@@ -134,4 +146,5 @@ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 docker compose -f unifi/docker-compose.yml logs --tail=100
 docker compose -f mqtt/docker-compose.yml logs --tail=100
 docker compose -f homeassistant/docker-compose.yml logs --tail=100
+docker compose -f minecraft/docker-compose.yml logs --tail=100
 ```
